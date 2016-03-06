@@ -122,7 +122,7 @@ static void connection_new(EV_P_ char* sock_path) {
 
   remote.sun_family = AF_UNIX;
   strcpy(remote.sun_path, sock_path);
-  len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+  len = strlen(remote.sun_path) + sizeof(remote.sun_family) + 1;
 
   if (-1 == connect(remote_fd, (struct sockaddr *)&remote, len)) {
       perror("connect");
@@ -138,7 +138,7 @@ int main (void)
   setnonblock(0);
   ev_io_init(&stdin_watcher, stdin_cb, /*STDIN_FILENO*/ 0, EV_READ);
 
-  connection_new(EV_A_ "/tmp/libev-echo.sock");
+  connection_new(EV_A_("/tmp/libev-echo.sock"));
 
   // now wait for events to arrive
   ev_loop(EV_A_ 0);

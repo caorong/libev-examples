@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -149,10 +150,11 @@ int unix_socket_init(struct sockaddr_un* socket_un, char* sock_path, int max_que
 int server_init(struct sock_ev_serv* server, char* sock_path, int max_queue) {
     server->fd = unix_socket_init(&server->socket, sock_path, max_queue);
     server->socket_len = sizeof(server->socket.sun_family) + strlen(server->socket.sun_path);
+    printf("server->socket.sun_family=%hhu - server->socket.sun_path=%s - socket_len=%d\n", server->socket.sun_family, server->socket.sun_path, server->socket_len);
 
     array_init(&server->clients, 128);
-
-    if (-1 == bind(server->fd, (struct sockaddr*) &server->socket, server->socket_len))
+    // 
+    if (-1 == bind(server->fd, (struct sockaddr*) &server->socket, server->socket_len + 1))
     {
       perror("echo server bind");
       exit(EXIT_FAILURE);
@@ -165,9 +167,16 @@ int server_init(struct sock_ev_serv* server, char* sock_path, int max_queue) {
     return 0;
 }
 
+struct sock_ev_serv server;
+// sock file canbe reuse, need not to delete
+void sig_close_handler(int signum) {
+    printf("catch singal %d \n", signum);
+    close(server.fd);
+    remove("/tmp/libev-echo.sock");
+}
+
 int main(void) {
     int max_queue = 128;
-    struct sock_ev_serv server;
     struct ev_periodic every_few_seconds;
     // Create our single-loop for this single-thread application
     EV_P  = ev_default_loop(0);
@@ -183,10 +192,12 @@ int main(void) {
     ev_io_init(&server.io, server_cb, server.fd, EV_READ);
     ev_io_start(EV_A_ &server.io);
 
+    // handle ctrl+c, 
+    /* signal(SIGINT, sig_close_handler); */
+
     // Run our loop, ostensibly forever
     puts("unix-socket-echo starting...\n");
     ev_loop(EV_A_ 0);
-
     // This point is only ever reached if the loop is manually exited
     close(server.fd);
     return EXIT_SUCCESS;
