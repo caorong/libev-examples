@@ -3,7 +3,7 @@
 CC_OPTS = -Wall -Werror -ggdb3 -I./include -I/usr/local/include
 CC_EV_OPT =  -lev
 
-all: obj/array-heap.o bin/unix-echo-server bin/unix-echo-client bin/udp-echo-server
+all: obj/array-heap.o bin/unix-echo-server bin/unix-echo-client bin/udp-echo-server bin/tcp-echo-server bin/tcp-echo-client
 
 clean:
 	rm -f *.o bin/*
@@ -21,4 +21,10 @@ bin/unix-echo-server: src/unix-echo-server.c obj/array-heap.o
 	$(CC) $(CC_OPTS) $(CC_EV_OPT) -o $@ $< obj/array-heap.o
 
 bin/unix-echo-client: src/unix-echo-client.c
+	$(CC) $(CC_OPTS) $(CC_EV_OPT) -o $@ $<
+
+bin/tcp-echo-server: src/tcp-echo-server.c
+	$(CC) $(CC_OPTS) $(CC_EV_OPT) -o $@ $<
+
+bin/tcp-echo-client: src/tcp-echo-client.c
 	$(CC) $(CC_OPTS) $(CC_EV_OPT) -o $@ $<
